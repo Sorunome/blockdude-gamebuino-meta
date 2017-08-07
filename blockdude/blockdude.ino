@@ -1,15 +1,5 @@
 #include <Gamebuino-Meta.h>
-/*
- * 0 - nothing
- * 1 - block
- * 2 - start position
- * 3 - end position
- * 4 - wall
- */
 
-const byte wall[] = {8,8,0xFB,0xFB,0x00,0xFE,0xFE,0x00,0xFB,0xFB};
-const byte door[] = {8,8,0x7E,0x42,0x42,0x42,0x46,0x42,0x42,0x7E};
-const byte block[] = {8,8,0xFF,0x81,0x81,0x81,0x81,0x81,0x81,0xFF};
 const byte dude_left[] = {8,8,0x1C,0x7E,0x12,0x22,0x14,0x2A,0x08,0x36};
 const byte dude_right[] = {8,8,0x38,0x7E,0x48,0x44,0x28,0x54,0x10,0x6C};
 const byte ok[] = {8,7,0x2,0x4,0x88,0x48,0x50,0x30,0x20}; // from bub
@@ -28,6 +18,16 @@ byte playerY;
 byte liftBlock;
 bool doLift = false;
 bool lookLeft = true;
+extern const uint8_t sprites_raw[];
+Image sprites = Image(sprites_raw, 3, ColorMode::index, 0);
+extern const uint8_t wall_up_right_raw[];
+extern const uint8_t wall_up_left_raw[];
+extern const uint8_t wall_down_right_raw[];
+extern const uint8_t wall_down_left_raw[];
+Image wall_up_right = Image(wall_up_right_raw, 5, ColorMode::index, 0);
+Image wall_up_left = Image(wall_up_left_raw, 5, ColorMode::index, 0);
+Image wall_down_right = Image(wall_down_right_raw, 5, ColorMode::index, 0);
+Image wall_down_left = Image(wall_down_left_raw, 5, ColorMode::index, 0);
 
 byte getTile(byte x, byte y) {
 	return gamemap[y*mapWidth + x];
@@ -52,7 +52,8 @@ class Block {
 			if (drawX > 86 || drawY > 68 || drawX < -8 || drawY < -8) {
 				return;
 			}
-			gb.display.drawBitmap(drawX, drawY, (const byte*)block);
+			sprites.setFrame(1);
+			gb.display.drawImage(drawX, drawY, sprites);
 		}
 		bool is(byte ix, byte iy) {
 			return !islift && ix==x && iy==y;
@@ -80,8 +81,8 @@ void loadLevel() {
 	for (byte y = 0; y < mapHeight; y++) {
 		for (byte x = 0; x < mapWidth; x++) {
 			byte tile = getTile(x, y);
-			if (tile == 2) {
-				mapX = 8*(x - 5) + 2; // it works, OK!?!?!?!
+			if (tile == 4) {
+				mapX = 8*(x - 4); // it works, OK!?!?!?!
 				mapY = 8*(y - 2) - 4;
 				playerX = x;
 				playerY = y;
@@ -92,6 +93,8 @@ void loadLevel() {
 	}
 }
 void drawWorld() {
+	bool wallMatrix[3][3];
+	
 	for (byte y = 0; y < mapHeight; y++){
 		for (byte x = 0; x < mapWidth; x++){
 			int drawX = x*8 - mapX;
@@ -100,10 +103,62 @@ void drawWorld() {
 				continue;
 			}
 			byte tile = getTile(x, y);
+			if (tile == 1 || tile == 4) {
+				tile = 0; // we draw background instead
+			}
 			if (tile == 3) {
-				gb.display.drawBitmap(drawX, drawY, (const byte*)door);
-			} else if (tile == 4) {
-				gb.display.drawBitmap(drawX, drawY, (const byte*)wall);
+				for (byte yy = 0; yy < 3; yy++) {
+					for (byte xx = 0; xx < 3; xx++) {
+						if (x + xx < 1 || y + yy < 1 || x + xx - 1 >= mapWidth || y + yy - 1 >= mapHeight) {
+							wallMatrix[xx][yy] = true;
+							continue;
+						}
+						wallMatrix[xx][yy] = getTile(x + xx - 1, y + yy - 1) == 3;
+					}
+				}
+				byte down_right = 0;
+				byte down_left = 0;
+				byte up_right = 0;
+				byte up_left = 0;
+				if (!wallMatrix[0][1]) {
+					down_left++;
+					up_left++;
+				}
+				if (!wallMatrix[2][1]) {
+					down_right++;
+					up_right++;
+				}
+				if (!wallMatrix[1][0]) {
+					up_left += 2;
+					up_right += 2;
+				}
+				if (!wallMatrix[1][2]) {
+					down_left += 2;
+					down_right += 2;
+				}
+				if (!down_left && !wallMatrix[0][2]) {
+					down_left = 4;
+				}
+				if (!down_right && !wallMatrix[2][2]) {
+					down_right = 4;
+				}
+				if (!up_left && !wallMatrix[0][0]) {
+					up_left = 4;
+				}
+				if (!up_right && !wallMatrix[2][0]) {
+					up_right = 4;
+				}
+				wall_up_left.setFrame(up_left);
+				wall_up_right.setFrame(up_right);
+				wall_down_left.setFrame(down_left);
+				wall_down_right.setFrame(down_right);
+				gb.display.drawImage(drawX, drawY, wall_up_left);
+				gb.display.drawImage(drawX + 4, drawY, wall_up_right);
+				gb.display.drawImage(drawX, drawY + 4, wall_down_left);
+				gb.display.drawImage(drawX + 4, drawY + 4, wall_down_right);
+			} else {
+				sprites.setFrame(tile);
+				gb.display.drawImage(drawX, drawY, sprites);
 			}
 		}
 	}
@@ -117,11 +172,13 @@ void drawWorld() {
 	}
 	drawY -= 8;
 	if (doLift && !(drawX > 86 || drawY > 68 || drawX < -8 || drawY < -8)) {
-		gb.display.drawBitmap(drawX, drawY, (const byte*)block);
+		sprites.setFrame(1);
+		gb.display.drawImage(drawX, drawY, sprites);
 	}
 }
 bool canMove(byte cx, byte cy) {
-	if (getTile(cx,cy) == 4) {
+	byte tile = getTile(cx,cy);
+	if (tile == 3) {
 		return false;
 	}
 	for (byte i = 0; i < numBlocks; i++) {
@@ -134,24 +191,25 @@ bool canMove(byte cx, byte cy) {
 void moveWorld() {
 	drawWorld();
 	while(1) {
-		if (gb.update()) {
-			if(gb.buttons.released(BUTTON_A)){
-				return;
-			}
-			if(gb.buttons.pressed(BUTTON_LEFT)){
-				mapX -= 8;
-			}
-			if(gb.buttons.pressed(BUTTON_RIGHT)){
-				mapX += 8;
-			}
-			if(gb.buttons.pressed(BUTTON_UP)){
-				mapY -= 8;
-			}
-			if(gb.buttons.pressed(BUTTON_DOWN)){
-				mapY += 8;
-			}
-			drawWorld();
+		if (!gb.update()) {
+			continue;
 		}
+		if(gb.buttons.released(BUTTON_A)){
+			return;
+		}
+		if(gb.buttons.pressed(BUTTON_LEFT)){
+			mapX -= 8;
+		}
+		if(gb.buttons.pressed(BUTTON_RIGHT)){
+			mapX += 8;
+		}
+		if(gb.buttons.pressed(BUTTON_UP)){
+			mapY -= 8;
+		}
+		if(gb.buttons.pressed(BUTTON_DOWN)){
+			mapY += 8;
+		}
+		drawWorld();
 	}
 }
 int32_t moves;
@@ -247,13 +305,13 @@ int32_t playMap() {
 			gb.sound.playCancel();
 			return 0;
 		}
-		if (getTile(playerX, playerY) == 3) {
+		if (getTile(playerX, playerY) == 2) {
 			return moves;
 		}
 		while (canMove(playerX, playerY+1)) {
 			mapY += 8;
 			playerY++;
-			if(getTile(playerX, playerY) == 3){
+			if (getTile(playerX, playerY) == 2) {
 				return moves;
 			}
 		}
