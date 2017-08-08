@@ -1,7 +1,5 @@
 #include <Gamebuino-Meta.h>
 
-const byte dude_left[] = {8,8,0x1C,0x7E,0x12,0x22,0x14,0x2A,0x08,0x36};
-const byte dude_right[] = {8,8,0x38,0x7E,0x48,0x44,0x28,0x54,0x10,0x6C};
 const byte ok[] = {8,7,0x2,0x4,0x88,0x48,0x50,0x30,0x20}; // from bub
 const byte ko[] = {8,7,0x82,0x44,0x28,0x10,0x28,0x44,0x82}; // from bub
 const byte logo[] = {64,35,0xFF,0x80,0xF8,0x00,0x00,0x00,0x00,0x00,0xFF,0x80,0xF8,0x00,0x00,0x00,0x00,0x00,0xDD,0x80,0xD8,0x00,0x00,0x00,0x00,0x00,0xFF,0x80,0xF8,0x00,0x00,0x00,0x00,0x00,0xFF,0xF8,0xF8,0xFF,0xF8,0xFF,0x9F,0x1F,0xF8,0xF8,0xF8,0xFF,0xF8,0xFF,0x9F,0x1F,0xD8,0xD8,0xD8,0xDD,0xD8,0xDB,0x9B,0x1B,0xF8,0xF8,0xF8,0xFF,0xF8,0xFF,0x9F,0x1F,0xFF,0xF8,0xF8,0xFF,0xF8,0xFF,0x9F,0xFF,0xFF,0x80,0xF8,0xF8,0xF8,0xF8,0x1F,0xF0,0xDD,0x80,0xD8,0xD8,0xD8,0xD8,0x1B,0xB0,0xFF,0x80,0xF8,0xF8,0xF8,0xF8,0x1F,0xF0,0xFF,0xF8,0xF8,0xFF,0xF8,0xFF,0x9F,0xFF,0xF8,0xF8,0xF8,0xFF,0xF8,0xFF,0x9F,0x1F,0xD8,0xD8,0xD8,0xDD,0xD8,0xDD,0x9B,0x1B,0xF8,0xF8,0xF8,0xFF,0xF8,0xFF,0x9F,0x1F,0xFF,0xF8,0xF8,0xFF,0xF8,0xFF,0x9F,0x1F,0xFF,0x80,0x00,0x00,0x00,0x00,0x00,0x00,0xDD,0x80,0x00,0x00,0xF0,0x00,0x00,0x00,0xFF,0x80,0x00,0x01,0xD8,0x00,0x00,0x00,0xFF,0x80,0x00,0x00,0x4C,0x22,0x0C,0x00,0x00,0x00,0x00,0x00,0x44,0x13,0x14,0x00,0x00,0x0F,0xF1,0xC0,0x25,0x09,0x98,0x3F,0x00,0x08,0x13,0xF0,0x25,0x8A,0x51,0x21,0x00,0x08,0x12,0x40,0x2C,0xCA,0x6E,0x21,0x00,0x08,0x12,0x20,0x18,0x71,0x80,0x21,0x00,0x08,0x11,0x40,0x30,0x00,0x00,0x23,0x00,0x08,0x12,0xA0,0x40,0x00,0x00,0x21,0x00,0x08,0x10,0x80,0x00,0x00,0x00,0x21,0x00,0x0F,0xF3,0x60,0x00,0x00,0x00,0x3F,0xDF,0xDF,0xDF,0xDC,0x03,0x7F,0x7F,0x7F,0xDF,0xDF,0xDF,0xDC,0x03,0x7F,0x7F,0x7F,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xFE,0xFE,0xFE,0xFC,0x03,0xFB,0xFB,0xFB,0xFE,0xFE,0xFE,0xFC,0x03,0xFB,0xFB,0xFB};
@@ -19,7 +17,7 @@ byte liftBlock;
 bool doLift = false;
 bool lookLeft = true;
 extern const uint8_t sprites_raw[];
-Image sprites = Image(sprites_raw, 3, ColorMode::index, 0);
+Image sprites = Image(sprites_raw, 6, ColorMode::index, 0);
 extern const uint8_t wall_up_right_raw[];
 extern const uint8_t wall_up_left_raw[];
 extern const uint8_t wall_down_right_raw[];
@@ -28,6 +26,8 @@ Image wall_up_right = Image(wall_up_right_raw, 5, ColorMode::index, 0);
 Image wall_up_left = Image(wall_up_left_raw, 5, ColorMode::index, 0);
 Image wall_down_right = Image(wall_down_right_raw, 5, ColorMode::index, 0);
 Image wall_down_left = Image(wall_down_left_raw, 5, ColorMode::index, 0);
+extern const uint8_t dude_raw[];
+Image dude = Image(dude_raw, 4, ColorMode::index, 0);
 
 byte getTile(byte x, byte y) {
 	return gamemap[y*mapWidth + x];
@@ -69,6 +69,8 @@ class Block {
 		}
 };
 Block *blocks[70];
+const byte camera_x_offset = 4;
+const byte camera_y_offset = 4;
 void loadLevel() {
 	gamemap = gamemaps[curlevel];
 	mapWidth = gamemap[0];
@@ -78,12 +80,14 @@ void loadLevel() {
 		delete blocks[i];
 	}
 	numBlocks = 0;
+	doLift = false;
+	lookLeft = true;
 	for (byte y = 0; y < mapHeight; y++) {
 		for (byte x = 0; x < mapWidth; x++) {
 			byte tile = getTile(x, y);
-			if (tile == 4) {
-				mapX = 8*(x - 4); // it works, OK!?!?!?!
-				mapY = 8*(y - 2) - 4;
+			if (tile == 9) {
+				mapX = 8*(x - 4) - camera_x_offset; // it works, OK!?!?!?!
+				mapY = 8*(y - 3) - camera_y_offset;
 				playerX = x;
 				playerY = y;
 			} else if (tile == 1) {
@@ -94,17 +98,50 @@ void loadLevel() {
 }
 void drawWorld() {
 	bool wallMatrix[3][3];
-	
+	wall_up_left.setFrame(0);
+	wall_up_right.setFrame(0);
+	wall_down_left.setFrame(0);
+	wall_down_right.setFrame(0);
+	// first lets draw the background
+	for (byte y = 0; y < 9; y++) {
+		for (byte x = 0; x < 11; x++) {
+			int drawX = x*8 - camera_x_offset;
+			int drawY = y*8 - camera_y_offset;
+			gb.display.drawImage(drawX, drawY, wall_up_left);
+			gb.display.drawImage(drawX + 4, drawY, wall_up_right);
+			gb.display.drawImage(drawX, drawY + 4, wall_down_left);
+			gb.display.drawImage(drawX + 4, drawY + 4, wall_down_right);
+		}
+	}
+	bool gotDoor = false;
+	byte doorX = 0;
+	byte doorY = 0;
+	bool rowDoorShadow = true;
 	for (byte y = 0; y < mapHeight; y++){
 		for (byte x = 0; x < mapWidth; x++){
 			int drawX = x*8 - mapX;
 			int drawY = y*8 - mapY;
+			byte tile = getTile(x, y);
+			if (tile == 2) {
+				gotDoor = true;
+				doorX = x;
+				doorY = y;
+			}
+			if (tile == 3 && gotDoor && (x - doorX == y - doorY)) {
+				rowDoorShadow = false;
+			}
 			if (drawX > 86 || drawY > 68 || drawX < -8 || drawY < -8) {
 				continue;
 			}
-			byte tile = getTile(x, y);
-			if (tile == 1 || tile == 4) {
+			if (tile == 1 || tile == 9) {
 				tile = 0; // we draw background instead
+			}
+			if (tile == 0 && gotDoor && rowDoorShadow && x > doorX && y >= doorY) {
+				if (x - doorX - 1 == y - doorY) {
+					tile = 4;
+				} else if (x - doorX == y - doorY) {
+					tile = 5;
+				}
 			}
 			if (tile == 3) {
 				for (byte yy = 0; yy < 3; yy++) {
@@ -168,7 +205,8 @@ void drawWorld() {
 	int drawX = playerX*8 - mapX;
 	int drawY = playerY*8 - mapY;
 	if (!(drawX > 86 || drawY > 68 || drawX < -8 || drawY < -8)) {
-		gb.display.drawBitmap(drawX, drawY, (lookLeft?(const byte*)dude_left:(const byte*)dude_right));
+		dude.setFrame(0 + (lookLeft?1:0) + (doLift?2:0));
+		gb.display.drawImage(drawX, drawY, dude);
 	}
 	drawY -= 8;
 	if (doLift && !(drawX > 86 || drawY > 68 || drawX < -8 || drawY < -8)) {
@@ -319,10 +357,24 @@ int32_t playMap() {
 	}
 }
 
+const uint8_t levelMenuMap[] = {
+	10,8,
+	3,3,3,3,3,3,3,3,3,3,
+	3,0,0,0,0,0,0,0,0,3,
+	3,3,3,3,3,3,3,3,3,3,
+	3,0,0,0,0,0,0,0,0,3,
+	3,0,0,0,0,0,0,0,0,3,
+	3,0,0,0,0,0,0,0,0,3,
+	3,0,0,0,0,0,0,0,0,3,
+	3,3,3,3,3,3,3,3,3,3,
+};
 void drawLevelMenu(byte curPick) {
-	gb.display.setCursors(0, 0);
+	drawWorld();
+	gb.display.setCursors(20, 9);
 	gb.display.print("Level Menu");
-	gb.display.print("\n\nLevel  \x11");
+	
+	gb.display.setCursors(13, 30);
+	gb.display.print("Level  \x11");
 	if (curPick < 10) {
 		gb.display.print(" ");
 	}
@@ -330,14 +382,28 @@ void drawLevelMenu(byte curPick) {
 	gb.display.print("\x10");
 	int32_t _moves = gb.save.get(curPick - 1);
 	
-	gb.display.drawBitmap(48,11,_moves>0?ok:ko);
+	gb.display.drawBitmap(61, 29, _moves>0?ok:ko);
 	if (_moves > 0) {
-		gb.display.setCursors(0, 24);
+		gb.display.setCursors(13, 42);
 		gb.display.print("Moves  ");
 		gb.display.print(_moves);
 	}
 }
 void chooseLevel() {
+	// create the fake map
+	gamemap = levelMenuMap;
+	mapWidth = *(gamemap++);
+	mapHeight = *(gamemap++);
+	for (byte i = 0; i < numBlocks; i++) {
+		delete blocks[i];
+	}
+	numBlocks = 0;
+	mapX = mapY = 0;
+	playerX = 7;
+	playerY = 6;
+	doLift = true;
+	lookLeft = true;
+	
 	byte curPick = curlevel+1;
 	while(1) {
 		if (!gb.update()) {
