@@ -231,7 +231,7 @@ void moveWorld() {
 		if (!gb.update()) {
 			continue;
 		}
-		if(gb.buttons.released(BUTTON_A)){
+		if(gb.buttons.released(BUTTON_B)){
 			return;
 		}
 		if(gb.buttons.pressed(BUTTON_LEFT)){
@@ -297,7 +297,7 @@ int32_t playMap() {
 			}
 			lookLeft = false;
 		}
-		if (gb.buttons.pressed(BUTTON_DOWN)) {
+		if (gb.buttons.pressed(BUTTON_A)) {
 			if (doLift) {
 				byte tmpX = playerX + (lookLeft?-1:1);
 				if (canMove(tmpX, playerY-1)) {
@@ -325,18 +325,12 @@ int32_t playMap() {
 		if (gb.buttons.pressed(BUTTON_UP)) {
 			climb();
 		}
-		if (gb.buttons.pressed(BUTTON_A)) {
+		if (gb.buttons.pressed(BUTTON_B)) {
 			int oldMapX = mapX;
 			int oldMapY = mapY;
 			moveWorld();
 			mapX = oldMapX;
 			mapY = oldMapY;
-		}
-		if (gb.buttons.held(BUTTON_B, 10)) {
-			loadLevel();
-			gb.sound.playCancel();
-			doLift = false;
-			moves = 0;
 		}
 		if (gb.buttons.pressed(BUTTON_C)) {
 			gb.sound.playCancel();
@@ -369,10 +363,10 @@ const uint8_t levelMenuMap[] = {
 };
 void drawLevelMenu(byte curPick) {
 	drawWorld();
-	gb.display.setCursors(20, 9);
+	gb.display.setCursor(20, 9);
 	gb.display.print("Level Menu");
 	
-	gb.display.setCursors(13, 30);
+	gb.display.setCursor(13, 30);
 	gb.display.print("Level  \x11");
 	if (curPick < 10) {
 		gb.display.print(" ");
@@ -383,7 +377,7 @@ void drawLevelMenu(byte curPick) {
 	
 	gb.display.drawBitmap(61, 29, _moves>0?ok:ko);
 	if (_moves > 0) {
-		gb.display.setCursors(13, 42);
+		gb.display.setCursor(13, 42);
 		gb.display.print("Moves  ");
 		gb.display.print(_moves);
 	}
