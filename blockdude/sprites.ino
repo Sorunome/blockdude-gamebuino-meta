@@ -8,6 +8,10 @@
 
 const uint8_t sprites_raw[] = {
 	8, 8,
+	6, 0,
+	0,
+	0xFF,
+	1,
 	// nothing
 	0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x00, 0x00,
@@ -71,6 +75,10 @@ const uint8_t sprites_raw[] = {
 
 const uint8_t dude_raw[] = {
 	8, 8,
+	4, 0,
+	0,
+	0xFF,
+	1,
 	
 	// looking right
 	0x00, 0x55, 0x55, 0x00,
@@ -115,6 +123,10 @@ const uint8_t dude_raw[] = {
 
 const uint8_t wall_up_right_raw[] = {
 	4, 4,
+	5, 0,
+	0,
+	0xFF,
+	1,
 	
 	0xF6, 0xFF,
 	0xF4, 0x44,
@@ -144,6 +156,10 @@ const uint8_t wall_up_right_raw[] = {
 
 const uint8_t wall_up_left_raw[] = {
 	4, 4,
+	5, 0,
+	0,
+	0xFF,
+	1,
 	
 	0x6F, 0x65,
 	0x44, 0x45,
@@ -173,6 +189,10 @@ const uint8_t wall_up_left_raw[] = {
 
 const uint8_t wall_down_right_raw[] = {
 	4, 4,
+	5, 0,
+	0,
+	0xFF,
+	1,
 	
 	0x99, 0xF5,
 	0x44, 0x45,
@@ -202,6 +222,10 @@ const uint8_t wall_down_right_raw[] = {
 
 const uint8_t wall_down_left_raw[] = {
 	4, 4,
+	5, 0,
+	0,
+	0xFF,
+	1,
 	
 	0x6F, 0xFF,
 	0xF4, 0x44,

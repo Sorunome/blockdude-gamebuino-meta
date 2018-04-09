@@ -16,17 +16,17 @@ byte liftBlock;
 bool doLift = false;
 bool lookLeft = true;
 extern const uint8_t sprites_raw[];
-Image sprites = Image(sprites_raw, 6, 0);
+Image sprites = Image(sprites_raw);
 extern const uint8_t wall_up_right_raw[];
 extern const uint8_t wall_up_left_raw[];
 extern const uint8_t wall_down_right_raw[];
 extern const uint8_t wall_down_left_raw[];
-Image wall_up_right = Image(wall_up_right_raw, 5, 0);
-Image wall_up_left = Image(wall_up_left_raw, 5, 0);
-Image wall_down_right = Image(wall_down_right_raw, 5, 0);
-Image wall_down_left = Image(wall_down_left_raw, 5, 0);
+Image wall_up_right = Image(wall_up_right_raw);
+Image wall_up_left = Image(wall_up_left_raw);
+Image wall_down_right = Image(wall_down_right_raw);
+Image wall_down_left = Image(wall_down_left_raw);
 extern const uint8_t dude_raw[];
-Image dude = Image(dude_raw, 4, 0);
+Image dude = Image(dude_raw);
 
 byte getTile(byte x, byte y) {
 	return gamemap[y*mapWidth + x];
